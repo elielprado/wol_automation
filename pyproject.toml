@@ -1,0 +1,58 @@
+[project]
+name = "wol-automation"
+version = "0.1.0"
+description = "Simple automation for WOL and Shutdown during power outages"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "black>=25.1.0",
+    "mypy>=1.15.0",
+    "paramiko>=3.5.1",
+    "psutil>=6.1.1",
+    "pylint>=3.3.6",
+    "pytest>=8.3.5",
+    "requests>=2.32.3",
+    "ruff>=0.11.7",
+    "taskipy>=1.14.1",
+]
+
+
+[tool.ruff]
+line-length = 99
+extend-exclude = ['migrations','tools']
+
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+ignore = ["F401"]
+
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+
+[tool.pytest.ini_options]
+pythonpath = "wol_automation"
+addopts = '-p no:warnings --cov=wol_automation --cov-report=xml:htmlcov/coverage.xml --junitxml=test-reports/pytest-report.xml'
+
+[tool.taskipy.tasks]
+lint = 'ruff check'
+black = 'black .'
+pre_format = 'ruff check --fix'
+format = 'ruff format'
+pre_test = 'task lint'
+test = 'pytest -s -x --cov=wol_automation -vv'
+full_test = 'pytest -s --cov=wol_automation -vv'
+mypy = 'mypy --exclude "build/" .'
+post_test = 'coverage html'
+build_docker = 'docker build -t wol_automation .'
+scan_docker = 'docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image wol_automation:latest'
+run_docker = 'docker run -p 8000:8000 wol_automation'
+pylint = 'pylint .'
+
+
+[tool.black]
+line-length = 99
+skip-string-normalization = true
+
+[tool.mypy]
+exclude = ['migrations']
