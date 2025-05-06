@@ -121,7 +121,9 @@ def wake_on_lan_all_auto():
     for comp in computers:
         if comp.get("auto_power_on", False):
             try:
-                print("Enviando Wake-on-LAN para {} ({})...".format(comp['name'], comp['hostname']))
+                print(
+                    "Enviando Wake-on-LAN para {} ({})...".format(comp['name'], comp['hostname'])
+                )
                 wake_on_lan(comp["mac"])
                 success_count += 1
             except Exception as e:  # pylint-disable=broad-except
@@ -159,7 +161,9 @@ def wake_on_lan_menu():
                 if 0 <= idx < len(computers):
                     try:
                         wake_on_lan(computers[idx]["mac"])
-                        print("Comando Wake-on-LAN enviado para {}.".format(computers[idx]['name']))
+                        print(
+                            "Comando Wake-on-LAN enviado para {}.".format(computers[idx]['name'])
+                        )
                     except Exception as e:  # pylint-disable=broad-except
                         print("Erro ao enviar Wake-on-LAN: {}".format(e))
                 else:
@@ -176,9 +180,11 @@ def wake_on_lan_menu():
                 except Exception as e:  # pylint-disable=broad-except
                     print("Erro ao enviar Wake-on-LAN para {}: {}".format(comp['name'], e))
 
-            print("\n{} de {} computadores foram ligados com sucesso.".format(
-                success_count, len(computers)
-            ))
+            print(
+                "\n{} de {} computadores foram ligados com sucesso.".format(
+                    success_count, len(computers)
+                )
+            )
 
         elif choice == "3":
             auto_computers = [comp for comp in computers if comp.get("auto_power_on", False)]

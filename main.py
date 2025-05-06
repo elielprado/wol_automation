@@ -11,10 +11,11 @@ import platform
 import subprocess
 import sys
 
-# Importando os módulos necessários
-from remote_poweron import wake_on_lan, wake_on_lan_by_name, wake_on_lan_menu, load_computers
-from remote_shutdown import shutdown_by_name, shutdown_menu
 import email_service
+
+# Importando os módulos necessários
+from remote_poweron import load_computers, wake_on_lan, wake_on_lan_by_name, wake_on_lan_menu
+from remote_shutdown import shutdown_by_name, shutdown_menu
 
 # Constantes
 CONFIG_FILE = "computers.json"
@@ -162,9 +163,7 @@ def list_computers():
         auto_on = "Sim" if comp.get("auto_power_on", False) else "Não"
         auto_off = "Sim" if comp.get("auto_power_off", False) else "Não"
 
-        print("{}. {} ({}) - {}".format(
-            i, comp['name'], comp['hostname'], os_type.capitalize()
-        ))
+        print("{}. {} ({}) - {}".format(i, comp['name'], comp['hostname'], os_type.capitalize()))
         print("   Sistema Operacional: {}".format(os_type.capitalize()))
         print("   MAC: {}".format(comp['mac']))
         print("   Auto Power On: {}, Auto Power Off: {}".format(auto_on, auto_off))
@@ -176,15 +175,17 @@ def configure_service():
     config = load_service_config()
 
     print("\n=== Configuração do Serviço de Monitoramento ===")
-    print("1. Limite de bateria para desligamento: {}%".format(
-        config['battery_threshold']
-    ))
-    print("2. Tempo sem carregador para desligamento: {} minutos".format(
-        config['time_without_charger']
-    ))
-    print("3. Atraso após restauração de energia: {} minutos".format(
-        config['delay_after_power_restore']
-    ))
+    print("1. Limite de bateria para desligamento: {}%".format(config['battery_threshold']))
+    print(
+        "2. Tempo sem carregador para desligamento: {} minutos".format(
+            config['time_without_charger']
+        )
+    )
+    print(
+        "3. Atraso após restauração de energia: {} minutos".format(
+            config['delay_after_power_restore']
+        )
+    )
     print("4. Voltar ao menu principal")
 
     choice = input("\nEscolha uma opção para alterar: ")
@@ -252,9 +253,7 @@ def start_stop_service():
             print("Para iniciar o serviço no Windows, você precisa:")
             print("1. Abra o Agendador de Tarefas")
             print("2. Crie uma nova tarefa que execute: python {}".format(script_path))
-            print(
-                "3. Configure-a para executar ao iniciar o sistema e repetir a cada 1 minuto"
-            )
+            print("3. Configure-a para executar ao iniciar o sistema e repetir a cada 1 minuto")
         else:  # Linux
             print("Para iniciar o serviço no Linux, você pode usar:")
             print("python {} &".format(script_path))
@@ -331,8 +330,11 @@ def configure_email():
             toggle = input("Habilitar envio de emails? (s/n): ").lower()
             config["enabled"] = toggle == 's'
             email_service.save_email_config(config)
-            print("Status de envio de emails {}!".format(
-                "habilitado" if config["enabled"] else "desabilitado"))
+            print(
+                "Status de envio de emails {}!".format(
+                    "habilitado" if config["enabled"] else "desabilitado"
+                )
+            )
 
         elif choice == "2":
             server = input("Servidor SMTP (ex: smtp.gmail.com): ")
@@ -402,7 +404,7 @@ def manage_recipients(config):
             print("Destinatários configurados:")
             for i, recipient in enumerate(config["recipients"], 1):
                 print("{}. {}".format(i, recipient))
-        
+
         print("\n1. Adicionar destinatário")
         print("2. Remover destinatário")
         print("0. Voltar")
@@ -425,7 +427,7 @@ def manage_recipients(config):
             if not config["recipients"]:
                 print("Não há destinatários para remover.")
                 continue
-                
+
             try:
                 idx = int(input("Digite o número do destinatário a remover: ")) - 1
                 if 0 <= idx < len(config["recipients"]):
@@ -451,22 +453,26 @@ def configure_notification_events(config):
         "power_restored": "Energia restaurada",
         "shutdown_initiated": "Desligamento iniciado",
         "poweron_initiated": "Inicialização remota",
-        "low_battery": "Bateria fraca"
+        "low_battery": "Bateria fraca",
     }
 
     while True:
         print("\n=== Configurar Eventos de Notificação ===")
         for i, (event_key, event_name) in enumerate(event_names.items(), 1):
-            status = "Habilitado" if config["notification_events"].get(event_key, False) else "Desabilitado"
+            status = (
+                "Habilitado"
+                if config["notification_events"].get(event_key, False)
+                else "Desabilitado"
+            )
             print("{}. {}: {}".format(i, event_name, status))
-        
+
         print("0. Voltar")
 
         choice = input("\nEscolha um evento para alterar (0 para voltar): ")
-        
+
         if choice == "0":
             break
-        
+
         try:
             idx = int(choice) - 1
             if 0 <= idx < len(event_names):
@@ -540,7 +546,7 @@ def main_menu():
 
         elif choice == "7":
             start_stop_service()
-            
+
         elif choice == "8":  # Nova opção para configuração de email
             configure_email()
 
@@ -576,7 +582,7 @@ def handle_command_line():
         choices=['start', 'stop', 'status'],
         help='Ação para o serviço (start, stop, status)',
     )
-    
+
     # Comando email
     email_parser = subparsers.add_parser('email', help='Configurar notificações por email')
     email_parser.add_argument(
@@ -633,9 +639,7 @@ def handle_command_line():
             try:
 
                 if platform.system() == "Windows":
-                    print(
-                        "Funcionalidade não disponível no Windows através da linha de comando."
-                    )
+                    print("Funcionalidade não disponível no Windows através da linha de comando.")
                 else:  # Linux
                     output = subprocess.check_output(["pgrep", "-f", MONITOR_SERVICE_SCRIPT])
                     pids = output.decode().strip().split("\n")
@@ -644,7 +648,7 @@ def handle_command_line():
                 print(SERVICE_NOT_RUNNING)
             except Exception as e:  # pylint disable=too-broad-except
                 print("Erro ao verificar o status: {}".format(e))
-                
+
     elif args.command == 'email':
         if args.action == 'configure':
             configure_email()

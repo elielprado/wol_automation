@@ -3,13 +3,14 @@ Modulo para envio de notificacoes por email usando SMTP.
 Suporta mensagens HTML formatadas com templates Jinja2.
 """
 
+import datetime
+import json
 import os
 import smtplib
-import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
 from jinja2 import Environment, FileSystemLoader
-import datetime
 
 # Constantes
 EMAIL_CONFIG_FILE = "email_config.json"
@@ -39,7 +40,7 @@ def load_email_config():
             "shutdown_initiated": True,
             "poweron_initiated": True,
             "low_battery": True,
-        }
+        },
     }
 
     if os.path.exists(EMAIL_CONFIG_FILE):
@@ -75,11 +76,11 @@ def save_email_config(config):
 def render_template(template_name, context):
     """
     Renderiza um template usando Jinja2.
-    
+
     Args:
         template_name (str): Nome do arquivo de template
         context (dict): Variaveis para o template
-        
+
     Returns:
         str: HTML renderizado
     """
@@ -93,7 +94,8 @@ def create_default_template():
     template_path = os.path.join(TEMPLATES_DIR, GENERATED_HTML)
     if not os.path.exists(template_path):
         with open(template_path, 'w', encoding='utf-8') as f:
-            f.write("""<!DOCTYPE html>
+            f.write(
+                """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -233,64 +235,65 @@ def create_default_template():
         <p>© Sistema de Gerenciamento de Energia Remota</p>
     </div>
 </body>
-</html>""")
+</html>"""
+            )
 
 
 def send_email(subject, template_name, context):
     """
     Envia um email usando SMTP com o template especificado.
-    
+
     Args:
         subject (str): Assunto do email
         template_name (str): Nome do arquivo de template
         context (dict): Variaveis para o template
-        
+
     Returns:
         bool: True se o email foi enviado com sucesso, False caso contrario
     """
     config = load_email_config()
-    
+
     # Verifica se o envio de emails esta habilitado
     if not config["enabled"]:
         print("Envio de emails desabilitado nas configuracoes.")
         return False
-    
+
     # Verifica se ha destinatarios
     if not config["recipients"]:
         print("Nenhum destinatario configurado para receber emails.")
         return False
-    
+
     # Adiciona a URL da logo ao contexto
     if "logo_url" not in context:
         context["logo_url"] = LOGO_URL
-    
+
     # Garante que variaveis opcionais estejam definidas como None se não existirem
     if "battery_percent" not in context:
         context["battery_percent"] = None
-    
+
     if "on_battery_time" not in context:
         context["on_battery_time"] = None
-    
+
     if "on_power" not in context:
         context["on_power"] = True
-    
+
     # Tenta renderizar o template
     try:
         html_content = render_template(template_name, context)
     except Exception as e:  # pylint: disable=broad-except
         print("Erro ao renderizar o template de email: {}".format(e))
         return False
-    
+
     # Configura a mensagem
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = config["from_address"]
     msg['To'] = ", ".join(config["recipients"])
-    
+
     # Adiciona a versão HTML
     html_part = MIMEText(html_content, 'html')
     msg.attach(html_part)
-    
+
     # Tenta enviar o email
     try:
         server = smtplib.SMTP(config["smtp_server"], config["smtp_port"])
@@ -309,34 +312,37 @@ def send_email(subject, template_name, context):
 def send_notification(event_type, message, extra_context=None):
     """
     Envia uma notificacao por email para um evento especifico.
-    
+
     Args:
         event_type (str): Tipo de evento (power_disconnected, power_restored, etc)
         message (str): Mensagem principal da notificacao
         extra_context (dict, optional): Contexto adicional para o template
-        
+
     Returns:
         bool: True se a notificacao foi enviada, False caso contrario
     """
     config = load_email_config()
-    
+
     # Verifica se o evento esta habilitado para notificacao
-    if event_type not in config["notification_events"] or not config["notification_events"][event_type]:
+    if (
+        event_type not in config["notification_events"]
+        or not config["notification_events"][event_type]
+    ):
         print("Notificacoes para o evento '{}' estao desabilitadas.".format(event_type))
         return False
-    
+
     # Mapeia o tipo de evento para um titulo amigavel
     event_titles = {
         "power_disconnected": "Alerta: Energia Desconectada",
         "power_restored": "Informação: Energia Restaurada",
         "shutdown_initiated": "Alerta: Desligamento Iniciado",
         "poweron_initiated": "Informação: Inicialização Remota",
-        "low_battery": "Alerta Crítico: Bateria Fraca"
+        "low_battery": "Alerta Crítico: Bateria Fraca",
     }
-    
+
     title = event_titles.get(event_type, "Notificação do Sistema")
     subject = "WoL Automation - {}".format(title)
-    
+
     # Prepara o contexto base para o template
     context = {
         "title": title,
@@ -346,16 +352,16 @@ def send_notification(event_type, message, extra_context=None):
         "logo_url": LOGO_URL,
         "battery_percent": None,
         "on_battery_time": None,
-        "on_power": True
+        "on_power": True,
     }
-    
+
     # Adiciona o contexto extra, se fornecido
     if extra_context:
         context.update(extra_context)
-    
+
     # Cria o template padrao se nao existir
     create_default_template()
-    
+
     # Envia a notificacao
     return send_email(subject, GENERATED_HTML, context)
 
@@ -363,12 +369,12 @@ def send_notification(event_type, message, extra_context=None):
 def test_email_config():
     """
     Testa a configuracao de email enviando um email de teste.
-    
+
     Returns:
         bool: True se o teste foi bem-sucedido, False caso contrario
     """
     print("Enviando email de teste...")
-    
+
     context = {
         "title": "Teste de Configuração",
         "event_type": "Teste de Email",
@@ -376,12 +382,12 @@ def test_email_config():
         "timestamp": datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "on_power": True,
         "battery_percent": 85,
-        "logo_url": LOGO_URL
+        "logo_url": LOGO_URL,
     }
-    
+
     # Cria o template padrao se nao existir
     create_default_template()
-    
+
     return send_email("WoL Automation - Teste de Email", GENERATED_HTML, context)
 
 

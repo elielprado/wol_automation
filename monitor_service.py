@@ -10,10 +10,11 @@ import os
 import platform
 import time
 from logging.handlers import RotatingFileHandler
-import email_service
 
 import psutil
-from remote_poweron import wake_on_lan_all_auto, load_computers
+
+import email_service
+from remote_poweron import load_computers, wake_on_lan_all_auto
 
 # Importando as funções de desligamento e ligação
 from remote_shutdown import shutdown_all_auto
@@ -246,10 +247,7 @@ def should_shutdown(power_status, service_config):
             "power_disconnected",
             "O sistema detectou que a energia elétrica foi desconectada. "
             f"O monitoramento de bateria foi iniciado e o comando de desligamento será executado em {service_config['time_without_charger']} minutos ou se a bateria do monitor cair para {service_config['battery_threshold']}%.",
-            {
-                "on_power": False,
-                "battery_percent": battery_percent
-            }
+            {"on_power": False, "battery_percent": battery_percent},
         )
         return False
 
@@ -275,10 +273,10 @@ def should_shutdown(power_status, service_config):
             {
                 "on_power": False,
                 "battery_percent": battery_percent,
-                "on_battery_time": "{:.1f}".format(time_on_battery)
-            }
+                "on_battery_time": "{:.1f}".format(time_on_battery),
+            },
         )
-    
+
     # Condições para desligamento:
     # 1. Bateria abaixo do limite configurado
     # 2. Tempo sem energia acima do limite configurado
@@ -328,16 +326,13 @@ def should_poweron(power_status, service_config):
             "Energia restaurada. Aguardando %s minutos para ligar os computadores.",
             service_config["delay_after_power_restore"],
         )
-        
+
         # Notifica sobre restauração de energia
         email_service.send_notification(
             "power_restored",
             "A energia elétrica foi restaurada. Os computadores serão ligados automaticamente "
             "após {} minutos.".format(service_config["delay_after_power_restore"]),
-            {
-                "on_power": True,
-                "battery_percent": battery_percent
-            }
+            {"on_power": True, "battery_percent": battery_percent},
         )
         return False
 
@@ -400,9 +395,13 @@ def main_loop():
 
                 # Notificação de desligamento
                 computers = load_computers()
-                auto_shutdown_computers = [comp for comp in computers if comp.get("auto_power_off", False)]
+                auto_shutdown_computers = [
+                    comp for comp in computers if comp.get("auto_power_off", False)
+                ]
 
-                on_battery_since = datetime.datetime.fromisoformat(power_status["on_battery_since"])
+                on_battery_since = datetime.datetime.fromisoformat(
+                    power_status["on_battery_since"]
+                )
                 time_on_battery = (datetime.datetime.now() - on_battery_since).total_seconds() / 60
 
                 email_service.send_notification(
@@ -413,8 +412,8 @@ def main_loop():
                         "on_power": False,
                         "battery_percent": battery_percent,
                         "on_battery_time": "{:.1f}".format(time_on_battery),
-                        "computers": auto_shutdown_computers
-                    }
+                        "computers": auto_shutdown_computers,
+                    },
                 )
 
             # Verifica se deve ligar os computadores
@@ -423,18 +422,17 @@ def main_loop():
 
                 # Executa a ligação
                 poweron_count = wake_on_lan_all_auto()
-                
+
                 # Notificação de ligação
                 computers = load_computers()
-                auto_poweron_computers = [comp for comp in computers if comp.get("auto_power_on", False)]
-                
+                auto_poweron_computers = [
+                    comp for comp in computers if comp.get("auto_power_on", False)
+                ]
+
                 email_service.send_notification(
                     "poweron_initiated",
                     "O sistema iniciou a ligação remota dos computadores após a restauração da energia elétrica.",
-                    {
-                        "on_power": True,
-                        "computers": auto_poweron_computers
-                    }
+                    {"on_power": True, "computers": auto_poweron_computers},
                 )
 
                 # Reseta o status
