@@ -15,7 +15,8 @@ import datetime
 EMAIL_CONFIG_FILE = "email_config.json"
 TEMPLATES_DIR = "templates"
 GENERATED_HTML = "notification.html"
-LOGO_URL = "https://github.com/elielprado/wol_automation/blob/main/assets/wol_logo.png?raw=true"
+# URL corrigido para acesso direto à imagem raw do GitHub
+LOGO_URL = "https://raw.githubusercontent.com/elielprado/wol_automation/main/assets/wol_logo.png"
 
 # Verificar se a pasta de templates existe, senao criar
 if not os.path.exists(TEMPLATES_DIR):
