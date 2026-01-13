@@ -37,4 +37,4 @@ tomli==2.2.1
 tomlkit==0.13.2
 typing_extensions==4.13.2
 urllib3==2.2.3
-virtualenv==20.30.0
+virtualenv==20.36.1
